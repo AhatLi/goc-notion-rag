@@ -66,7 +66,7 @@ func (l *Loader) FetchAllPages(ctx context.Context) ([]*models.Document, error) 
 		fmt.Printf("  콘텐츠 길이: %d자\n", contentLen)
 
 		// 빈 콘텐츠 또는 너무 짧은 콘텐츠는 건너뛰기
-		if contentLen < 10 {
+		if contentLen < 50 {
 			fmt.Printf("  ⚠️  콘텐츠가 너무 짧아 건너뜁니다 (길이: %d자)\n", contentLen)
 			if contentLen > 0 {
 				fmt.Printf("  콘텐츠 미리보기: %s\n", content[:min(100, len(content))])
@@ -96,6 +96,88 @@ func (l *Loader) FetchAllPages(ctx context.Context) ([]*models.Document, error) 
 	}
 
 	return allDocuments, nil
+}
+
+// FetchAllPagesStream 모든 Notion 페이지를 가져와서 채널을 통해 실시간으로 전송합니다
+// Producer 패턴으로 사용되며, 페이지를 가져오는 즉시 청킹하여 채널에 전송합니다
+func (l *Loader) FetchAllPagesStream(ctx context.Context, docChan chan<- *models.Document) error {
+	defer close(docChan)
+
+	// Search API로 모든 페이지 조회
+	pages, err := l.searchAllPages(ctx)
+	if err != nil {
+		return fmt.Errorf("페이지 검색 실패: %w", err)
+	}
+
+	fmt.Printf("📄 총 %d개의 페이지를 찾았습니다.\n", len(pages))
+
+	// 각 페이지 처리
+	for i, page := range pages {
+		// 컨텍스트 취소 확인
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		fmt.Printf("처리 중: %d/%d - %s\n", i+1, len(pages), getPageTitle(page))
+
+		// 페이지 블록 가져오기 (PageID를 BlockID로 변환)
+		pageID := string(page.ID)
+		content, err := l.fetchPageContent(ctx, notionapi.BlockID(pageID))
+		if err != nil {
+			fmt.Printf("⚠️  페이지 %s 처리 실패: %v\n", pageID, err)
+			continue
+		}
+
+		// 페이지 메타데이터 구성
+		meta := map[string]string{
+			"page_id":   pageID,
+			"title":     getPageTitle(page),
+			"url":       getPageURL(page),
+			"created":   page.CreatedTime.Format(time.RFC3339),
+			"last_edit": page.LastEditedTime.Format(time.RFC3339),
+		}
+
+		// 콘텐츠 길이 확인
+		contentLen := len([]rune(content))
+		fmt.Printf("  콘텐츠 길이: %d자\n", contentLen)
+
+		// 빈 콘텐츠 또는 너무 짧은 콘텐츠는 건너뛰기
+		if contentLen < 50 {
+			fmt.Printf("  ⚠️  콘텐츠가 너무 짧아 건너뜁니다 (길이: %d자)\n", contentLen)
+			continue
+		}
+
+		// 청킹 처리
+		chunks := chunkText(content, chunkSize)
+		fmt.Printf("  청크 개수: %d개\n", len(chunks))
+
+		// 각 청크를 채널에 전송
+		for idx, chunk := range chunks {
+			chunkLen := len([]rune(chunk))
+			doc := &models.Document{
+				ID:           fmt.Sprintf("%s-chunk-%d", pageID, idx),
+				Title:        getPageTitle(page),
+				Content:      chunk,
+				ParentPageID: pageID,
+				Meta:         meta,
+			}
+
+			// 채널에 전송 (컨텍스트 취소 확인)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case docChan <- doc:
+				fmt.Printf("    청크 %d: %d자 전송\n", idx, chunkLen)
+			}
+		}
+
+		// Rate limit 방지
+		time.Sleep(rateLimitDelay)
+	}
+
+	return nil
 }
 
 // searchAllPages Search API를 사용하여 모든 페이지를 검색합니다
