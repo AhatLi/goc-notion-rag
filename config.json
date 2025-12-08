@@ -1,0 +1,5 @@
+{
+  "notion_api_key": "CHANGE_ME",
+  "gemini_api_key": "CHANGE_ME",
+  "db_path": "./my-knowledge.db"
+}
