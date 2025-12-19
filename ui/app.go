@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"goc-notion-reg/rag"
+	"goc-notion-rag/rag"
 )
 
 // Run 간단한 REPL 스타일의 검색 인터페이스를 실행합니다

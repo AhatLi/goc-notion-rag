@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"goc-notion-reg/models"
+	"goc-notion-rag/models"
 
 	"github.com/philippgille/chromem-go"
 )

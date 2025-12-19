@@ -1,4 +1,4 @@
-module goc-notion-reg
+module goc-notion-rag
 
 go 1.24.0
 

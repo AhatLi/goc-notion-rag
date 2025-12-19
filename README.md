@@ -33,12 +33,76 @@ Notion 페이지를 자동으로 가져와서 벡터 데이터베이스에 저�
 
 ### 빌드
 
+#### 로컬 플랫폼용 빌드
+
 ```bash
 git clone <repository-url>
-cd goc-notion-reg
+cd goc-notion-rag
 go mod download
 go build .
 ```
+
+#### 정적 링크 빌드 (권장) - 모든 의존성 포함
+
+**모든 의존성을 포함한 단일 실행 파일**을 생성합니다. Go 런타임이나 외부 라이브러리 설치 없이 어디서든 실행 가능합니다.
+
+**빌드 스크립트 사용 (가장 간단):**
+
+**Windows (PowerShell):**
+```powershell
+.\build.ps1
+```
+
+**Linux/macOS (Bash):**
+```bash
+chmod +x build.sh
+./build.sh
+```
+
+**수동 빌드 (정적 링크 옵션 포함):**
+
+**PowerShell:**
+```powershell
+# CGO 비활성화 및 정적 링크 설정
+$env:CGO_ENABLED="0"
+$env:GOOS="linux"
+$env:GOARCH="amd64"
+go build -ldflags "-s -w" -trimpath -o goc-notion-rag-linux-amd64 .
+
+# macOS (arm64)
+$env:GOOS="darwin"
+$env:GOARCH="arm64"
+go build -ldflags "-s -w" -trimpath -o goc-notion-rag-darwin-arm64 .
+```
+
+**Linux/macOS:**
+```bash
+# CGO 비활성화 및 정적 링크
+export CGO_ENABLED=0
+
+# Linux (amd64)
+GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -trimpath -o goc-notion-rag-linux-amd64 .
+
+# macOS (arm64)
+GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w" -trimpath -o goc-notion-rag-darwin-arm64 .
+```
+
+**빌드 옵션 설명:**
+- `CGO_ENABLED=0`: CGO 비활성화 (순수 Go 코드만 사용, 외부 C 라이브러리 의존성 제거)
+- `-ldflags "-s -w"`: 디버그 정보 제거 및 심볼 테이블 제거 (바이너리 크기 최적화)
+- `-trimpath`: 빌드 경로 정보 제거 (재현 가능한 빌드)
+
+> **✅ 장점:**
+> - 모든 의존성이 바이너리에 포함되어 별도 설치 불필요
+> - 다른 컴퓨터로 복사만 하면 바로 실행 가능
+> - Go 런타임이나 시스템 라이브러리 의존성 없음
+> - 바이너리 크기 최적화 (약 20-30% 감소)
+
+> **참고**: 빌드된 바이너리는 실행 권한이 필요할 수 있습니다 (Linux/macOS):
+> ```bash
+> chmod +x goc-notion-rag-linux-amd64
+> chmod +x goc-notion-rag-darwin-arm64
+> ```
 
 ## ⚙️ 설정
 
@@ -175,7 +239,7 @@ go run . --reload --workers 3
 ## 📁 프로젝트 구조
 
 ```
-goc-notion-reg/
+goc-notion-rag/
 ├── main.go              # 메인 진입점 및 CLI 처리
 ├── config.go            # 설정 파일 로드
 ├── config.json          # API 키 설정 (gitignore 권장)

@@ -10,12 +10,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"goc-notion-reg/db"
-	"goc-notion-reg/embedding"
-	"goc-notion-reg/models"
-	"goc-notion-reg/notion"
-	"goc-notion-reg/rag"
-	"goc-notion-reg/ui"
+	"goc-notion-rag/db"
+	"goc-notion-rag/embedding"
+	"goc-notion-rag/models"
+	"goc-notion-rag/notion"
+	"goc-notion-rag/rag"
+	"goc-notion-rag/ui"
 )
 
 func main() {

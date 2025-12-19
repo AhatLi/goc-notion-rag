@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"goc-notion-reg/db"
-	"goc-notion-reg/embedding"
-	"goc-notion-reg/models"
+	"goc-notion-rag/db"
+	"goc-notion-rag/embedding"
+	"goc-notion-rag/models"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
@@ -186,3 +186,4 @@ func (s *Searcher) Close() error {
 
 	return nil
 }
+

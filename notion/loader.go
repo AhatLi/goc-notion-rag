@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"goc-notion-reg/models"
+	"goc-notion-rag/models"
 
 	"github.com/jomei/notionapi"
 )
